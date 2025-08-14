@@ -3,70 +3,928 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>A Importância da Água</title>
-    <!-- Incluindo Tailwind CSS para estilização rápida e responsiva -->
+    <title>Guardiões da Água</title>
     <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Adiciona a biblioteca Font Awesome para ícones -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Adiciona a biblioteca Chart.js para gráficos -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
     <style>
-        /* Estilo para a fonte Inter */
         body {
             font-family: 'Inter', sans-serif;
+            background: linear-gradient(135deg, #f0f4f8 0%, #d9e2ec 100%);
+        }
+        .card {
+            transition: transform 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
+        }
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.6);
+            justify-content: center;
+            align-items: center;
+            animation: fadeIn 0.3s ease-out;
+        }
+        .modal-content {
+            background-color: #fff;
+            padding: 32px;
+            border-radius: 16px;
+            box-shadow: 0 10px 25px rgba(0,0,0,0.2);
+            width: 90%;
+            max-width: 600px;
+            animation: slideUp 0.4s ease-out;
+        }
+        .close-button {
+            color: #888;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 32px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: color 0.2s;
+        }
+        .close-button:hover,
+        .close-button:focus {
+            color: #000;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        @keyframes slideUp {
+            from { transform: translateY(50px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        .video-container {
+            position: relative;
+            padding-bottom: 56.25%; /* 16:9 aspect ratio */
+            height: 0;
+            overflow: hidden;
+            border-radius: 12px;
+            margin-top: 1rem;
+        }
+        .video-container iframe {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+        }
+        .image-placeholder {
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        .image-placeholder:hover {
+            background-color: #e2e8f0;
+        }
+        .image-placeholder img.hidden + span {
+            display: block;
+        }
+        .image-placeholder img:not(.hidden) + span {
+            display: none;
+        }
+        .add-video-button {
+            transition: opacity 0.3s ease;
+        }
+        .has-video .add-video-button {
+            opacity: 0;
+            pointer-events: none;
+        }
+        .add-video-button-container {
+            position: relative;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
     </style>
 </head>
-<body class="bg-gray-100 flex items-center justify-center min-h-screen p-4">
+<body class="p-4">
 
-    <!-- Container principal com card estilizado -->
-    <div class="max-w-2xl w-full bg-white rounded-xl shadow-lg p-8 space-y-6">
+    <!-- Modal para visualização de imagem em tela cheia -->
+    <div id="enlargedImageModal" class="modal">
+        <div class="modal-content relative max-w-2xl bg-transparent p-0">
+            <span class="close-button">&times;</span>
+            <img id="enlargedImage" src="#" alt="Imagem ampliada" class="max-w-full h-auto rounded-lg">
+        </div>
+    </div>
 
-        <!-- Título da página -->
-        <header>
-            <h1 class="text-4xl font-extrabold text-blue-600 text-center">A Importância da Água Potável</h1>
-            <p class="mt-2 text-lg text-gray-500 text-center">Uma reflexão baseada no documento "Rede Moradia, Água e Energia".</p>
+    <!-- Novo Modal para Mitos e Verdades -->
+    <div id="mythModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close-button">&times;</span>
+            <h3 id="myth-modal-title" class="text-2xl font-bold mb-4 text-gray-800"></h3>
+            <p id="myth-modal-explanation" class="text-gray-700 leading-relaxed"></p>
+        </div>
+    </div>
+
+    <!-- Novo Modal para explicações de Armazenamento -->
+    <div id="storageModal" class="modal">
+        <div class="modal-content relative">
+            <span class="close-button">&times;</span>
+            <h3 id="storage-modal-title" class="text-2xl font-bold mb-4 text-gray-800"></h3>
+            <p id="storage-modal-explanation" class="text-gray-700 leading-relaxed"></p>
+        </div>
+    </div>
+    
+    <!-- Container Principal com layout de grid para telas maiores -->
+    <div class="max-w-6xl w-full mx-auto bg-white rounded-3xl shadow-2xl p-8 space-y-8 lg:space-y-12 my-8">
+        
+        <!-- Header e Toggles -->
+        <header class="text-center space-y-4">
+            <h1 class="text-5xl lg:text-6xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-green-500">
+                Guardiões da Água
+            </h1>
+            <p class="text-lg text-gray-600">Vamos juntos proteger nossa maior riqueza!</p>
+            <div class="flex justify-center space-x-4">
+                <button id="toggle-criancas" class="px-6 py-3 text-sm font-semibold rounded-full bg-blue-600 text-white shadow-lg transition-all duration-300 hover:bg-blue-700 transform hover:scale-105">
+                    Modo Crianças
+                </button>
+                <button id="toggle-adultos" class="px-6 py-3 text-sm font-semibold rounded-full bg-gray-200 text-gray-800 shadow-md transition-all duration-300 hover:bg-gray-300 transform hover:scale-105">
+                    Modo Adultos
+                </button>
+            </div>
         </header>
 
-        <!-- Seção sobre a escassez de água -->
-        <section class="p-6 bg-blue-50 rounded-lg">
-            <h2 class="text-2xl font-bold text-gray-800">Você Sabia?</h2>
-            <p class="mt-4 text-gray-700 leading-relaxed">
-                70% da superfície da Terra é coberta por água, mas impressionantemente, apenas **1% dessa água está disponível para consumo humano**. No Brasil, mesmo sendo um país com vastos recursos hídricos, quase **35 milhões de brasileiros ainda não têm acesso à água potável**, um direito humano fundamental.
-            </p>
-        </section>
+        <!-- Logos -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 justify-center w-full">
+            <div class="h-28 bg-gray-100 flex items-center justify-center rounded-xl relative overflow-hidden shadow-inner">
+                <img id="logo-1" src="#" alt="Logo 1" class="hidden w-full h-full object-contain p-2">
+                <button onclick="document.getElementById('logo-1-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Logo</button>
+                <input type="file" id="logo-1-input" class="hidden" accept="image/*">
+            </div>
+            <div class="h-28 bg-gray-100 flex items-center justify-center rounded-xl relative overflow-hidden shadow-inner">
+                <img id="logo-2" src="#" alt="Logo 2" class="hidden w-full h-full object-contain p-2">
+                <button onclick="document.getElementById('logo-2-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Logo</button>
+                <input type="file" id="logo-2-input" class="hidden" accept="image/*">
+            </div>
+            <div class="h-28 bg-gray-100 flex items-center justify-center rounded-xl relative overflow-hidden shadow-inner">
+                <img id="logo-3" src="#" alt="Logo 3" class="hidden w-full h-full object-contain p-2">
+                <button onclick="document.getElementById('logo-3-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Logo</button>
+                <input type="file" id="logo-3-input" class="hidden" accept="image/*">
+            </div>
+        </div>
 
-        <!-- Seção sobre mitos e verdades -->
-        <section class="p-6 bg-blue-50 rounded-lg">
-            <h2 class="text-2xl font-bold text-gray-800">Mitos e Verdades</h2>
-            <ul class="mt-4 space-y-2 text-gray-700">
-                <li class="flex items-start">
-                    <span class="text-red-500 font-bold mr-2">✗</span>
-                    <span>Tomar água diretamente de um poço ou rio é seguro. **Mito.**</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-500 font-bold mr-2">✓</span>
-                    <span>O ideal é consumir água tratada, filtrada ou mineral. **Verdade.**</span>
-                </li>
-                <li class="flex items-start">
-                    <span class="text-green-500 font-bold mr-2">✓</span>
-                    <span>É possível usar a água da chuva para limpeza e irrigação. **Verdade.**</span>
-                </li>
-            </ul>
-        </section>
+        <!-- Conteúdo do aplicativo -->
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8 lg:gap-12">
+            
+            <!-- Seção para Crianças -->
+            <div id="criancas-content" class="space-y-8">
+                <!-- Card: Onde a Água se Esconde? -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-blue-800 flex items-center space-x-2">
+                        <i class="fas fa-chart-pie text-4xl text-blue-500"></i><span>Onde a Água se Esconde?</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Sabiam que a Terra é coberta por um monte de água, mas quase tudo é salgado? A água que podemos usar é muito pouca! A maior parte está em picolés gigantes (calotas polares) ou escondida debaixo da terra!
+                    </p>
+                    <div class="h-64 flex justify-center items-center">
+                        <canvas id="waterDistributionChartCriancas"></canvas>
+                    </div>
+                </section>
 
-        <!-- Seção sobre o uso da água potável -->
-        <section class="p-6 bg-blue-50 rounded-lg">
-            <h2 class="text-2xl font-bold text-gray-800">É Importante Usar Água Potável Para:</h2>
-            <ul class="mt-4 space-y-2 list-disc list-inside text-gray-700">
-                <li>Lavar as mãos, escovar os dentes e tomar banho.</li>
-                <li>Beber, cozinhar e lavar alimentos.</li>
-                <li>Lavar roupas, louça ou quaisquer materiais que entrem em contato com o corpo humano ou alimentos.</li>
-            </ul>
-        </section>
+                <!-- Card: Detetives da Água: Mitos e Verdades (Interativo) -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-blue-800 flex items-center space-x-2">
+                        <i class="fas fa-question-circle text-4xl text-blue-500"></i><span>Detetives da Água: Mitos e Verdades</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Vamos descobrir o que é verdade e o que é mentira sobre a água?
+                    </p>
+                    <div class="mt-4 space-y-2 text-gray-700">
+                        <div class="flex items-start cursor-pointer p-3 rounded-lg transition-colors duration-200 hover:bg-blue-200" onclick="toggleMyth(this, 'Água da chuva direto para a boca?', 'A água da chuva pode carregar impurezas e sujeira do ar. Para beber, a água precisa ser tratada, filtrada ou mineral.')">
+                            <i class="fas fa-times-circle text-gray-400 font-bold mr-3 text-xl transition-colors duration-200"></i>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-700">Água da chuva direto para a boca?</span>
+                                <span class="hidden-answer text-red-500 font-bold">Mito!</span>
+                                <span class="hidden-answer text-sm text-gray-600 italic">Ela pode ter sujeirinha.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-start cursor-pointer p-3 rounded-lg transition-colors duration-200 hover:bg-blue-200" onclick="toggleMyth(this, 'Água da chuva para regar as plantas?', 'A água da chuva é perfeita para regar as plantas, pois não contém os produtos químicos do tratamento de água. Isso as ajuda a crescerem fortes!')">
+                            <i class="fas fa-check-circle text-gray-400 font-bold mr-3 text-xl transition-colors duration-200"></i>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-700">Água da chuva para regar as plantas?</span>
+                                <span class="hidden-answer text-green-500 font-bold">Verdade!</span>
+                                <span class="hidden-answer text-sm text-gray-600 italic">Elas adoram.</span>
+                            </div>
+                        </div>
+                        <div class="flex items-start cursor-pointer p-3 rounded-lg transition-colors duration-200 hover:bg-blue-200" onclick="toggleMyth(this, 'Água do rio é segura para beber?', 'A água de rios e lagos pode conter germes e bactérias que nos deixam doentes. Para ser segura para beber, ela precisa passar por um tratamento especial.')">
+                            <i class="fas fa-times-circle text-gray-400 font-bold mr-3 text-xl transition-colors duration-200"></i>
+                            <div class="flex flex-col">
+                                <span class="font-bold text-gray-700">Água do rio é segura para beber?</span>
+                                <span class="hidden-answer text-red-500 font-bold">Mito!</span>
+                                <span class="hidden-answer text-sm text-gray-600 italic">Ela pode ter micróbios que deixam a gente doente.</span>
+                            </div>
+                        </div>
+                    </div>
+                     <!-- Container para o vídeo específico desta seção -->
+                    <div class="video-container group">
+                        <iframe id="detetives-video" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
+                        <button onclick="showVideoModal('detetives-video')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo</button>
+                    </div>
+                </section>
+                
+                <!-- Card: Super-Heróis da Saúde! -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-blue-800 flex items-center space-x-2">
+                        <i class="fas fa-heartbeat text-4xl text-red-500"></i><span>Super-Heróis da Saúde!</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        A água potável é nossa super-heroína! Ela nos ajuda a ficar hidratados, fortes e cheios de energia. É a melhor bebida do mundo!
+                    </p>
+                    <div class="flex items-center space-x-4 bg-white p-4 rounded-xl shadow-inner">
+                        <div class="flex-grow">
+                            <h3 class="font-bold text-lg text-blue-800">Hidratação por Quilo:</h3>
+                            <p class="text-gray-700">Para cada quilo que você pesa, beba cerca de **35ml de água** por dia!</p>
+                        </div>
+                        <div class="w-1/3 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden">
+                            <img id="hydration-img-criancas" src="#" alt="Imagem de Hidratação" class="hidden w-full h-full object-contain p-2">
+                            <button onclick="document.getElementById('hydration-img-input-criancas').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Imagem</button>
+                            <input type="file" id="hydration-img-input-criancas" class="hidden" accept="image/*">
+                        </div>
+                    </div>
+                    <!-- Container para o vídeo específico desta seção -->
+                    <div class="video-container group">
+                        <iframe id="superherois-video" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen class="w-full h-full"></iframe>
+                        <button onclick="showVideoModal('superherois-video')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo</button>
+                    </div>
+                </section>
+                
+                <!-- Card: Nossas Missões de Guardiões! -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-blue-800 flex items-center space-x-2">
+                        <i class="fas fa-user-shield text-4xl text-green-500"></i><span>Nossas Missões de Guardiões!</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Vamos ser super-heróis da água! Nossa missão é:
+                    </p>
+                    <ul class="list-none text-gray-700 space-y-2">
+                        <li class="flex items-start"><i class="fas fa-trash-alt mr-3 mt-1 text-red-500"></i><span>Não jogar lixo nos rios.</span></li>
+                        <li class="flex items-start"><i class="fas fa-faucet-drip mr-3 mt-1 text-blue-500"></i><span>Não desperdiçar água.</span></li>
+                        <li class="flex items-start"><i class="fas fa-box-open mr-3 mt-1 text-gray-500"></i><span>Guardar a água em potes limpos e fechados.</span></li>
+                    </ul>
+                </section>
+                
+                <!-- Novo Card: Clube dos Exploradores da Água -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-blue-800 flex items-center space-x-2">
+                        <i class="fas fa-compass text-4xl text-blue-500"></i><span>Clube dos Exploradores da Água</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Hora de explorar! Assista a esses vídeos para descobrir mais sobre a água!
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <!-- Video 1 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <h3 class="font-bold text-lg text-gray-800 text-center mb-2">Aventuras na Estação de Tratamento</h3>
+                            <div class="video-container">
+                                <iframe id="criancas-video-1" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('criancas-video-1')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo</button>
+                        </div>
+                        <!-- Video 2 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <h3 class="font-bold text-lg text-gray-800 text-center mb-2">O Segredo da Água Subterrânea</h3>
+                            <div class="video-container">
+                                <iframe id="criancas-video-2" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('criancas-video-2')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo</button>
+                        </div>
+                        <!-- Video 3 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <h3 class="font-bold text-lg text-gray-800 text-center mb-2">A Jornada da Gota d'Água</h3>
+                            <div class="video-container">
+                                <iframe id="criancas-video-3" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('criancas-video-3')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo</button>
+                        </div>
+                        <!-- Video 4 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <h3 class="font-bold text-lg text-gray-800 text-center mb-2">De Olho nos Poluentes!</h3>
+                            <div class="video-container">
+                                <iframe id="criancas-video-4" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('criancas-video-4')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo</button>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Seção para Adultos (oculto por padrão) -->
+            <div id="adultos-content" class="hidden space-y-8">
+                 <!-- Card: Dados e Contexto -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+                         <i class="fas fa-water text-4xl text-blue-500"></i><span>Dados e Contexto</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Apesar de a Terra ser coberta por 70% de água, apenas 1% é potável e acessível. No Brasil, um país com vastos recursos hídricos, cerca de 35 milhões de pessoas ainda não têm acesso à água potável, um desafio significativo para a saúde pública e os direitos humanos.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <div class="bg-white p-4 rounded-xl shadow-inner">
+                            <h3 class="font-bold text-lg text-gray-800 text-center mb-2">Distribuição Global de Água</h3>
+                            <div class="h-48">
+                                <canvas id="waterDistributionGlobal"></canvas>
+                            </div>
+                        </div>
+                        <div class="bg-white p-4 rounded-xl shadow-inner">
+                            <h3 class="font-bold text-lg text-gray-800 text-center mb-2">Água Doce</h3>
+                            <div class="h-48">
+                                <canvas id="freshwaterDistribution"></canvas>
+                            </div>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Card: Curiosidades (seção adicionada) -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fas fa-lightbulb text-4xl text-yellow-500"></i><span>Curiosidades</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        Aqui estão alguns vídeos curiosos e educativos sobre a água.
+                    </p>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mt-4">
+                        <!-- Video 1 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <div class="video-container">
+                                <iframe id="video-frame-1" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('video-frame-1')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo 1</button>
+                        </div>
+                        <!-- Video 2 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <div class="video-container">
+                                <iframe id="video-frame-2" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('video-frame-2')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo 2</button>
+                        </div>
+                        <!-- Video 3 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <div class="video-container">
+                                <iframe id="video-frame-3" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('video-frame-3')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo 3</button>
+                        </div>
+                        <!-- Video 4 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <div class="video-container">
+                                <iframe id="video-frame-4" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('video-frame-4')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo 4</button>
+                        </div>
+                        <!-- Video 5 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <div class="video-container">
+                                <iframe id="video-frame-5" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('video-frame-5')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo 5</button>
+                        </div>
+                        <!-- Video 6 -->
+                        <div class="bg-white p-4 rounded-xl shadow-inner add-video-button-container group">
+                            <div class="video-container">
+                                <iframe id="video-frame-6" class="w-full h-full" src="" frameborder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" allowfullscreen></iframe>
+                            </div>
+                            <button onclick="showVideoModal('video-frame-6')" class="add-video-button absolute inset-0 flex items-center justify-center bg-gray-900 bg-opacity-50 text-white text-lg font-bold transition-opacity duration-300 hover:opacity-100 rounded-lg">Adicionar Vídeo 6</button>
+                        </div>
+                    </div>
+                </section>
+                
+                <!-- Card: Riscos da Água Não Tratada -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fas fa-exclamation-triangle text-4xl text-red-500"></i><span>Riscos da Água Não Tratada</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        O consumo de água contaminada é a causa de diversas doenças de veiculação hídrica, que representam um sério problema de saúde.
+                    </p>
+                    <ul class="mt-4 space-y-2 list-none text-gray-700">
+                        <!-- Item para Amebíase -->
+                        <li class="flex items-center p-3 rounded-lg transition-colors hover:bg-blue-100">
+                            <i class="fas fa-bug mr-3 text-red-500"></i>
+                            <span class="flex-grow">Amebíase</span>
+                            <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0 image-placeholder">
+                                <img id="amebiase-img" src="#" alt="Imagem da Amebíase" class="hidden w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); showEnlargedImage('amebiase-img')">
+                                <span class="absolute text-sm text-gray-400">Adicionar Imagem</span>
+                            </div>
+                            <input type="file" id="amebiase-img-input" class="hidden" accept="image/*">
+                            <button onclick="document.getElementById('amebiase-img-input').click()" class="ml-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Carregar</button>
+                        </li>
+                        <!-- Item para Giardíase -->
+                        <li class="flex items-center p-3 rounded-lg transition-colors hover:bg-blue-100">
+                            <i class="fas fa-bug mr-3 text-red-500"></i>
+                            <span class="flex-grow">Giardíase</span>
+                            <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0 image-placeholder">
+                                <img id="giardiase-img" src="#" alt="Imagem da Giardíase" class="hidden w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); showEnlargedImage('giardiase-img')">
+                                <span class="absolute text-sm text-gray-400">Adicionar Imagem</span>
+                            </div>
+                            <input type="file" id="giardiase-img-input" class="hidden" accept="image/*">
+                            <button onclick="document.getElementById('giardiase-img-input').click()" class="ml-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Carregar</button>
+                        </li>
+                        <!-- Item para Gastroenterite -->
+                        <li class="flex items-center p-3 rounded-lg transition-colors hover:bg-blue-100">
+                            <i class="fas fa-bug mr-3 text-red-500"></i>
+                            <span class="flex-grow">Gastroenterite</span>
+                            <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0 image-placeholder">
+                                <img id="gastroenterite-img" src="#" alt="Imagem da Gastroenterite" class="hidden w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); showEnlargedImage('gastroenterite-img')">
+                                <span class="absolute text-sm text-gray-400">Adicionar Imagem</span>
+                            </div>
+                            <input type="file" id="gastroenterite-img-input" class="hidden" accept="image/*">
+                            <button onclick="document.getElementById('gastroenterite-img-input').click()" class="ml-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Carregar</button>
+                        </li>
+                        <!-- Item para Febre Tifoide -->
+                        <li class="flex items-center p-3 rounded-lg transition-colors hover:bg-blue-100">
+                            <i class="fas fa-bug mr-3 text-red-500"></i>
+                            <span class="flex-grow">Febre Tifoide</span>
+                            <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0 image-placeholder">
+                                <img id="febre-tifoide-img" src="#" alt="Imagem da Febre Tifoide" class="hidden w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); showEnlargedImage('febre-tifoide-img')">
+                                <span class="absolute text-sm text-gray-400">Adicionar Imagem</span>
+                            </div>
+                            <input type="file" id="febre-tifoide-img-input" class="hidden" accept="image/*">
+                            <button onclick="document.getElementById('febre-tifoide-img-input').click()" class="ml-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Carregar</button>
+                        </li>
+                        <!-- Item para Hepatite Infecciosa -->
+                        <li class="flex items-center p-3 rounded-lg transition-colors hover:bg-blue-100">
+                            <i class="fas fa-bug mr-3 text-red-500"></i>
+                            <span class="flex-grow">Hepatite Infecciosa</span>
+                            <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0 image-placeholder">
+                                <img id="hepatite-img" src="#" alt="Imagem da Hepatite Infecciosa" class="hidden w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); showEnlargedImage('hepatite-img')">
+                                <span class="absolute text-sm text-gray-400">Adicionar Imagem</span>
+                            </div>
+                            <input type="file" id="hepatite-img-input" class="hidden" accept="image/*">
+                            <button onclick="document.getElementById('hepatite-img-input').click()" class="ml-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Carregar</button>
+                        </li>
+                        <!-- Item para Cólera -->
+                        <li class="flex items-center p-3 rounded-lg transition-colors hover:bg-blue-100">
+                            <i class="fas fa-bug mr-3 text-red-500"></i>
+                            <span class="flex-grow">Cólera</span>
+                            <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0 image-placeholder">
+                                <img id="colera-img" src="#" alt="Imagem da Cólera" class="hidden w-full h-full object-cover cursor-pointer" onclick="event.stopPropagation(); showEnlargedImage('colera-img')">
+                                <span class="absolute text-sm text-gray-400">Adicionar Imagem</span>
+                            </div>
+                            <input type="file" id="colera-img-input" class="hidden" accept="image/*">
+                            <button onclick="document.getElementById('colera-img-input').click()" class="ml-4 bg-blue-500 text-white px-4 py-2 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Carregar</button>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Card: Benefícios e Usos da Água Potável -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fas fa-glass-water text-4xl text-blue-500"></i><span>Benefícios e Usos da Água Potável</span>
+                    </h2>
+                    <div class="space-y-4">
+                        <p class="text-gray-700 leading-relaxed">
+                            A água potável é essencial para a nossa saúde e bem-estar.
+                        </p>
+                        <div class="flex items-center space-x-4 bg-white p-4 rounded-xl shadow-inner">
+                            <div class="flex-grow">
+                                <h3 class="font-bold text-lg text-blue-800">Hidratação por Quilo:</h3>
+                                <p class="text-gray-700">A recomendação é beber aproximadamente **35ml de água por quilo** de peso corporal por dia.</p>
+                            </div>
+                            <div class="w-1/3 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden">
+                                <img id="hydration-img-adultos" src="#" alt="Imagem de Hidratação" class="hidden w-full h-full object-contain p-2">
+                                <button onclick="document.getElementById('hydration-img-input-adultos').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Imagem</button>
+                                <input type="file" id="hydration-img-input-adultos" class="hidden" accept="image/*">
+                            </div>
+                        </div>
+                        <ul class="list-none text-gray-700 space-y-4 mt-4">
+                            <li class="flex items-center space-x-3 p-2 rounded-lg transition-colors duration-200 hover:bg-blue-100">
+                                <i class="fas fa-hands-wash flex-shrink-0 text-blue-500 text-2xl"></i>
+                                <span class="flex-grow text-gray-700">Higiene pessoal (lavar as mãos, tomar banho).</span>
+                                <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0">
+                                    <img id="higiene-img" src="#" alt="Imagem de Higiene" class="hidden w-full h-full object-contain p-2">
+                                    <button onclick="document.getElementById('higiene-img-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Imagem</button>
+                                    <input type="file" id="higiene-img-input" class="hidden" accept="image/*">
+                                </div>
+                            </li>
+                            <li class="flex items-center space-x-3 p-2 rounded-lg transition-colors duration-200 hover:bg-blue-100">
+                                <i class="fas fa-kitchen-set flex-shrink-0 text-blue-500 text-2xl"></i>
+                                <span class="flex-grow text-gray-700">Preparação de alimentos e bebidas.</span>
+                                <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0">
+                                    <img id="preparacao-img" src="#" alt="Imagem de Preparação de Alimentos" class="hidden w-full h-full object-contain p-2">
+                                    <button onclick="document.getElementById('preparacao-img-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Imagem</button>
+                                    <input type="file" id="preparacao-img-input" class="hidden" accept="image/*">
+                                </div>
+                            </li>
+                            <li class="flex items-center space-x-3 p-2 rounded-lg transition-colors duration-200 hover:bg-blue-100">
+                                <i class="fas fa-broom flex-shrink-0 text-blue-500 text-2xl"></i>
+                                <span class="flex-grow text-gray-700">Limpeza doméstica.</span>
+                                <div class="w-24 h-24 bg-gray-100 flex items-center justify-center rounded-lg relative overflow-hidden flex-shrink-0">
+                                    <img id="limpeza-img" src="#" alt="Imagem de Limpeza Doméstica" class="hidden w-full h-full object-contain p-2">
+                                    <button onclick="document.getElementById('limpeza-img-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Imagem</button>
+                                    <input type="file" id="limpeza-img-input" class="hidden" accept="image/*">
+                                </div>
+                            </li>
+                        </ul>
+                    </div>
+                </section>
+
+                <!-- Card: Armazenamento e Manuseio -->
+                <section class="card p-8 bg-blue-50 rounded-2xl space-y-4 shadow-md border-l-4 border-blue-400">
+                    <h2 class="text-3xl font-bold text-gray-800 flex items-center space-x-2">
+                        <i class="fas fa-box-archive text-4xl text-gray-500"></i><span>Armazenamento e Manuseio</span>
+                    </h2>
+                    <p class="text-gray-700 leading-relaxed">
+                        O armazenamento correto da água potável é crucial para evitar a contaminação.
+                    </p>
+                    <ul class="list-none text-gray-700 space-y-2">
+                        <li class="flex items-start cursor-pointer hover:bg-blue-200 p-3 rounded-lg transition-colors" onclick="showStorageExplanation('Utilizar recipientes limpos e com tampa.', 'Recipientes inadequados, como garrafas de refrigerante reutilizadas ou baldes sem tampa, podem ser fontes de contaminação por microrganismos e produtos químicos. Sempre utilize recipientes de uso doméstico limpos e que possam ser vedados.')">
+                            <i class="fas fa-flask mr-3 mt-1 text-gray-500"></i>Utilizar recipientes limpos e com tampa.
+                        </li>
+                        <li class="flex items-start cursor-pointer hover:bg-blue-200 p-3 rounded-lg transition-colors" onclick="showStorageExplanation('Armazenar em locais secos, arejados e longe do sol.', 'A exposição ao sol e ao calor pode favorecer a proliferação de algas e bactérias na água, alterando seu sabor e tornando-a imprópria para o consumo. Ambientes úmidos também podem contaminar o exterior dos recipientes.')">
+                            <i class="fas fa-temperature-full mr-3 mt-1 text-gray-500"></i>Armazenar em locais secos, arejados e longe do sol.
+                        </li>
+                        <li class="flex items-start cursor-pointer hover:bg-blue-200 p-3 rounded-lg transition-colors" onclick="showStorageExplanation('Realizar a limpeza e desinfecção periódica dos recipientes.', 'Mesmo com a água potável, a limpeza regular dos recipientes é vital. O hipoclorito de sódio (água sanitária sem cheiro) na concentração correta pode ser usado para desinfecção, eliminando qualquer vestígio de microrganismos.')">
+                            <i class="fas fa-spray-can-sparkles mr-3 mt-1 text-gray-500"></i>Realizar a limpeza e desinfecção periódica dos recipientes.
+                        </li>
+                    </ul>
+                </section>
+            </div>
+        </div>
 
         <!-- Rodapé -->
-        <footer class="mt-8 text-center text-gray-400 text-sm">
-            <p>&copy; 2025 Informações adaptadas. Fonte: Documento "Rede Moradia, Água e Energia".</p>
+        <footer class="mt-8 text-center text-gray-600 text-sm space-y-6 pt-8 border-t border-gray-200">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-8 justify-center w-full">
+                <div class="h-24 bg-gray-100 flex items-center justify-center rounded-xl relative overflow-hidden shadow-inner">
+                    <img id="logo-4" src="#" alt="Logo 4" class="hidden w-full h-full object-contain p-2">
+                    <button onclick="document.getElementById('logo-4-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Logo</button>
+                    <input type="file" id="logo-4-input" class="hidden" accept="image/*">
+                </div>
+                <div class="h-24 bg-gray-100 flex items-center justify-center rounded-xl relative overflow-hidden shadow-inner">
+                    <img id="logo-5" src="#" alt="Logo 5" class="hidden w-full h-full object-contain p-2">
+                    <button onclick="document.getElementById('logo-5-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Logo</button>
+                    <input type="file" id="logo-5-input" class="hidden" accept="image/*">
+                </div>
+                <div class="h-24 bg-gray-100 flex items-center justify-center rounded-xl relative overflow-hidden shadow-inner">
+                    <img id="logo-6" src="#" alt="Logo 6" class="hidden w-full h-full object-contain p-2">
+                    <button onclick="document.getElementById('logo-6-input').click()" class="absolute inset-0 flex items-center justify-center text-gray-500 hover:bg-gray-200 transition-colors">Adicionar Logo</button>
+                    <input type="file" id="logo-6-input" class="hidden" accept="image/*">
+                </div>
+            </div>
+            <p class="text-base text-gray-700">Aplicação criada por **Teodoro Ferreira da Silva Neto**, aluno do Instituto Federal do Pará-Campus Breves e estagiário do Instituto Mondó.</p>
+            <p>Email: <a href="mailto:THEODOROFERREIRANETO@GMAIL.COM" class="text-blue-600 hover:underline">THEODOROFERREIRANETO@GMAIL.COM</a></p>
+            <p>Lattes: <a href="https://lattes.cnpq.br/8232142368735354" target="_blank" class="text-blue-600 hover:underline">https://lattes.cnpq.br/8232142368735354</a></p>
+            <p class="mt-4 text-gray-500">&copy; 2025 Informações adaptadas. Fonte: Documento "Rede Moradia, Água e Energia".</p>
         </footer>
 
     </div>
 
+    <script>
+        const criancasContent = document.getElementById('criancas-content');
+        const adultosContent = document.getElementById('adultos-content');
+        const toggleCriancas = document.getElementById('toggle-criancas');
+        const toggleAdultos = document.getElementById('toggle-adultos');
+        const mythModal = document.getElementById('mythModal');
+        const storageModal = document.getElementById('storageModal');
+        const enlargedImageModal = document.getElementById('enlargedImageModal');
+        const enlargedImage = document.getElementById('enlargedImage');
+
+        // Dados para os gráficos
+        const waterDistributionGlobalData = {
+            labels: ['Água Salgada', 'Água Doce'],
+            datasets: [{
+                data: [97.5, 2.5],
+                backgroundColor: ['#2B6CB0', '#48BB78'],
+                hoverOffset: 4
+            }]
+        };
+
+        const freshwaterDistributionData = {
+            labels: ['Calotas Polares', 'Aquíferos', 'Outros', 'Rios e Lagos'],
+            datasets: [{
+                data: [69, 30, 1, 0.5],
+                backgroundColor: ['#90CDF4', '#63B3ED', '#A0AEC0', '#4299E1'],
+                hoverOffset: 4
+            }]
+        };
+        
+        let waterDistributionGlobalChart;
+        let freshwaterDistributionChart;
+        let waterDistributionChartCriancas;
+
+        function initializeCharts() {
+            // Gráfico para a seção de Crianças
+            if (document.getElementById('waterDistributionChartCriancas')) {
+                const ctxCriancas = document.getElementById('waterDistributionChartCriancas').getContext('2d');
+                waterDistributionChartCriancas = new Chart(ctxCriancas, {
+                    type: 'pie',
+                    data: {
+                        labels: ['Calotas Polares', 'Aquíferos', 'Outros', 'Rios e Lagos'],
+                        datasets: [{
+                            data: [69, 30, 1, 0.5],
+                            backgroundColor: ['#90CDF4', '#63B3ED', '#A0AEC0', '#4299E1'],
+                            hoverOffset: 4
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 15,
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+
+            // Gráficos para a seção de Adultos
+            if (document.getElementById('waterDistributionGlobal')) {
+                const ctxGlobal = document.getElementById('waterDistributionGlobal').getContext('2d');
+                waterDistributionGlobalChart = new Chart(ctxGlobal, {
+                    type: 'pie',
+                    data: waterDistributionGlobalData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 15,
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+            if (document.getElementById('freshwaterDistribution')) {
+                const ctxFresh = document.getElementById('freshwaterDistribution').getContext('2d');
+                freshwaterDistributionChart = new Chart(ctxFresh, {
+                    type: 'pie',
+                    data: freshwaterDistributionData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'right',
+                                labels: {
+                                    boxWidth: 15,
+                                    padding: 10
+                                }
+                            },
+                            tooltip: {
+                                callbacks: {
+                                    label: function(context) {
+                                        let label = context.label || '';
+                                        if (label) {
+                                            label += ': ';
+                                        }
+                                        if (context.parsed !== null) {
+                                            label += context.parsed + '%';
+                                        }
+                                        return label;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        function switchMode(mode) {
+            if (mode === 'criancas') {
+                criancasContent.classList.remove('hidden');
+                adultosContent.classList.add('hidden');
+                toggleCriancas.classList.remove('bg-gray-200', 'text-gray-800');
+                toggleCriancas.classList.add('bg-blue-600', 'text-white');
+                toggleAdultos.classList.remove('bg-blue-600', 'text-white');
+                toggleAdultos.classList.add('bg-gray-200', 'text-gray-800');
+            } else {
+                criancasContent.classList.add('hidden');
+                adultosContent.classList.remove('hidden');
+                toggleAdultos.classList.remove('bg-gray-200', 'text-gray-800');
+                toggleAdultos.classList.add('bg-blue-600', 'text-white');
+                toggleCriancas.classList.remove('bg-blue-600', 'text-white');
+                toggleCriancas.classList.add('bg-gray-200', 'text-gray-800');
+            }
+        }
+
+        toggleCriancas.addEventListener('click', () => switchMode('criancas'));
+        toggleAdultos.addEventListener('click', () => switchMode('adultos'));
+
+        // Configuração inicial
+        switchMode('criancas');
+        window.addEventListener('load', initializeCharts);
+
+        // Lógica dos modais
+        function showVideoModal(iframeId) {
+            const modal = document.createElement('div');
+            modal.className = 'modal';
+            modal.innerHTML = `
+                <div class="modal-content relative">
+                    <span class="close-button">&times;</span>
+                    <h3 class="text-2xl font-bold mb-4 text-gray-800">Adicionar Vídeo</h3>
+                    <p class="text-gray-600 mb-4">Insira o link do vídeo (YouTube, Vimeo, etc.).</p>
+                    <input type="text" id="video-url-input" class="p-3 border-2 border-gray-300 rounded-lg w-full text-sm text-gray-700 focus:outline-none focus:ring-2 focus:ring-blue-500" placeholder="Ex: https://www.youtube.com/watch?v=dQw4w9WgXcQ">
+                    <button id="save-video-btn" class="mt-4 bg-blue-500 text-white px-6 py-3 rounded-full text-sm font-medium hover:bg-blue-600 transition-colors">Salvar Vídeo</button>
+                </div>
+            `;
+            document.body.appendChild(modal);
+            modal.style.display = 'flex';
+
+            modal.querySelector('.close-button').onclick = () => { modal.remove(); };
+            modal.onclick = (event) => { if (event.target === modal) modal.remove(); };
+
+            modal.querySelector('#save-video-btn').onclick = () => {
+                const url = modal.querySelector('#video-url-input').value;
+                if (url) {
+                    const iframe = document.getElementById(iframeId);
+                    const embedUrl = convertToEmbedUrl(url);
+                    if (embedUrl) {
+                        iframe.src = embedUrl;
+                        iframe.closest('.group').classList.add('has-video');
+                        // No need to hide the button, CSS handles opacity.
+                    } else {
+                        alert('Por favor, insira um URL de vídeo válido do YouTube ou Vimeo.');
+                    }
+                    modal.remove();
+                }
+            };
+        }
+
+        function convertToEmbedUrl(url) {
+            let embedUrl = '';
+            if (url.includes('youtube.com/watch')) {
+                const videoId = url.split('v=')[1];
+                if (videoId) {
+                    embedUrl = `https://www.youtube.com/embed/${videoId.split('&')[0]}`;
+                }
+            } else if (url.includes('youtu.be/')) {
+                const videoId = url.split('youtu.be/')[1];
+                if (videoId) {
+                    embedUrl = `https://www.youtube.com/embed/${videoId.split('?')[0]}`;
+                }
+            } else if (url.includes('vimeo.com/')) {
+                const videoId = url.split('vimeo.com/')[1];
+                if (videoId) {
+                    embedUrl = `https://player.vimeo.com/video/${videoId.split('?')[0]}`;
+                }
+            }
+            return embedUrl;
+        }
+
+        document.querySelectorAll('.close-button').forEach(button => {
+            button.addEventListener('click', () => {
+                mythModal.style.display = 'none';
+                storageModal.style.display = 'none';
+                enlargedImageModal.style.display = 'none';
+            });
+        });
+
+        window.onclick = function(event) {
+            if (event.target == mythModal) {
+                mythModal.style.display = 'none';
+            }
+            if (event.target == storageModal) {
+                storageModal.style.display = 'none';
+            }
+            if (event.target == enlargedImageModal) {
+                enlargedImageModal.style.display = 'none';
+            }
+        }
+        
+        // Lógica de upload de imagens
+        const imageUploadInputs = [
+            'logo-1-input', 'logo-2-input', 'logo-3-input',
+            'hydration-img-input-criancas', 'hydration-img-input-adultos',
+            'higiene-img-input', 'preparacao-img-input', 'limpeza-img-input',
+            'logo-4-input', 'logo-5-input', 'logo-6-input'
+        ];
+
+        imageUploadInputs.forEach(inputId => {
+            document.getElementById(inputId).addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                const imgElement = document.getElementById(inputId.replace('-input', ''));
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    imgElement.src = url;
+                    imgElement.classList.remove('hidden');
+                    event.target.closest('div').querySelector('button').classList.add('hidden');
+                }
+            });
+        });
+
+        // Lógica para a seção "Riscos da Água Não Tratada"
+        const diseaseImageInputs = [
+            'amebiase-img-input', 'giardiase-img-input', 'gastroenterite-img-input',
+            'febre-tifoide-img-input', 'hepatite-img-input', 'colera-img-input'
+        ];
+
+        diseaseImageInputs.forEach(inputId => {
+            const imgElementId = inputId.replace('-input', '');
+            document.getElementById(inputId).addEventListener('change', function(event) {
+                const file = event.target.files[0];
+                const imgElement = document.getElementById(imgElementId);
+                const placeholderSpan = imgElement.nextElementSibling;
+                if (file) {
+                    const url = URL.createObjectURL(file);
+                    imgElement.src = url;
+                    imgElement.classList.remove('hidden');
+                    placeholderSpan.classList.add('hidden');
+                }
+            });
+        });
+
+        function showEnlargedImage(imgId) {
+            const img = document.getElementById(imgId);
+            if (img.src && img.src !== window.location.href) {
+                enlargedImage.src = img.src;
+                enlargedImageModal.style.display = 'flex';
+            }
+        }
+        
+        // Lógica para a seção "Detetives da Água: Mitos e Verdades" (Modo Crianças)
+        function toggleMyth(element, title, explanation) {
+            const answer = element.querySelector('.hidden-answer');
+            const icon = element.querySelector('i');
+            
+            // Toggle visibility of the answer text
+            const isHidden = answer.style.display === 'none' || answer.style.display === '';
+            answer.style.display = isHidden ? 'block' : 'none';
+
+            // Change icon color
+            if (element.querySelector('.fa-times-circle')) {
+                icon.classList.toggle('text-red-500', isHidden);
+                icon.classList.toggle('text-gray-400', !isHidden);
+            } else if (element.querySelector('.fa-check-circle')) {
+                icon.classList.toggle('text-green-500', isHidden);
+                icon.classList.toggle('text-gray-400', !isHidden);
+            }
+        }
+        
+        document.querySelectorAll('.hidden-answer').forEach(el => el.style.display = 'none');
+
+        // Lógica para o modal de Armazenamento (Modo Adultos)
+        function showStorageExplanation(title, explanation) {
+            document.getElementById('storage-modal-title').innerText = title;
+            document.getElementById('storage-modal-explanation').innerText = explanation;
+            storageModal.style.display = 'flex';
+        }
+
+        // Verifica se já há um vídeo inserido ao carregar a página
+        document.querySelectorAll('.video-container iframe').forEach(iframe => {
+            if(iframe.src) {
+                iframe.closest('.group').classList.add('has-video');
+            }
+        });
+    </script>
 </body>
 </html>
